@@ -198,6 +198,12 @@
 
         <!-- Analyze Button -->
         <div style="text-align: center; margin: 1rem 0;">
+                        <button class="btn btn-warning btn-sm" onclick="runAnalysisForWeekday(6)" style="margin-left: 0.5rem;">
+                🔵 ניתוח ימי שישי
+            </button>
+            <button class="btn btn-info btn-sm" onclick="runAnalysisForWeekday(7)" style="margin-left: 0.5rem;">
+                🌃 ניתוח מוצ"ש
+            </button>
             <button class="btn btn-primary" onclick="analyze()" id="analyzeBtn" disabled style="font-size: 1.1rem; padding: 0.8rem 2rem;">
                 🔍 נתח נתונים
             </button>
@@ -1323,6 +1329,56 @@
     document.getElementById('filterRoutesRouteId').addEventListener('change', renderRoutes);
     document.getElementById('filterDeadheadStatus').addEventListener('change', renderDeadheads);
     document.getElementById('filterDeadheadSeason').addEventListener('change', renderDeadheads);
+
+// === Weekday Analysis Function ===
+const WEEKDAY_COLUMN = 'WeekDayTripSourceTime';
+
+function runAnalysisForWeekday(targetWeekday) {
+    if (!STATE.execData || STATE.execData.length === 0) {
+        alert('לא נטען קובץ ביצועים');
+        return;
+    }
+
+    const originalExecData = STATE.execData.slice();
+    const originalPlanData = STATE.planData ? STATE.planData.slice() : null;
+
+    STATE.execData = originalExecData.filter(row => {
+        const raw = row[WEEKDAY_COLUMN];
+        if (raw == null) return false;
+        const wd = parseInt(String(raw).trim(), 10);
+        return wd === targetWeekday;
+    });
+
+    if (STATE.execData.length === 0) {
+        alert('לא נמצאו נסיעות ליום שנבחר (weekday=' + targetWeekday + ')');
+        STATE.execData = originalExecData;
+        if (originalPlanData) STATE.planData = originalPlanData;
+        return;
+    }
+
+    STATE.execResults = analyzeExecution();
+    STATE.planResults = analyzePlanning();
+    STATE.gaps = analyzeGaps();
+    updateKPIs();
+    renderTables();
+    renderGapsDetailed();
+
+    document.getElementById('upload-section').classList.add('hidden');
+    document.getElementById('results-section').classList.remove('hidden');
+
+    const label =
+        targetWeekday === 6 ? 'שישי' :
+        targetWeekday === 7 ? 'שבת' : ('weekday ' + targetWeekday);
+
+    document.getElementById('analysis-date').textContent =
+        new Date().toLocaleDateString('he-IL') + ' ' +
+        new Date().toLocaleTimeString('he-IL') +
+        ' – סינון ' + label;
+
+    STATE.execData = originalExecData;
+    if (originalPlanData) STATE.planData = originalPlanData;
+}
+
     </script>
 </body>
 </html>
