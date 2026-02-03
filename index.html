@@ -1345,7 +1345,19 @@ function runAnalysisForWeekday(targetWeekday) {
     STATE.execData = originalExecData.filter(row => {
         const raw = row[WEEKDAY_COLUMN];
         if (raw == null) return false;
-        const wd = parseInt(String(raw).trim(), 10);
+        // Try parsing as date first, then as plain number
+        let wd;
+        if (raw && String(raw).includes('-') || String(raw).includes('/')) {
+          // Looks like a date string
+          const date = new Date(raw);
+          wd = date.getDay(); // 0=Sunday, 1=Monday, ..., 5=Friday, 6=Saturday
+          // Convert to match targetWeekday convention (6=Friday, 7=Saturday)
+          if (wd === 5) wd = 6; // Friday
+          else if (wd === 6) wd = 7; // Saturday
+        } else {
+          // Try parsing as number
+          wd = parseInt(String(raw).trim(), 10);
+        }
         return wd === targetWeekday;
     });
 
